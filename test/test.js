@@ -1741,7 +1741,8 @@ var allTestFunctions = [
 function testLargeGetSet() {
     showTestBanner("testLargeGetSet");
 
-    var fileContents = fs.readFileSync(__filename, "binary");
+    var fileContents = new Buffer(32);
+    var size = fileContents.utf8Write(fs.readFileSync(__filename), 0);
 
     var wasDebugMode = redisclient.debugMode;
     redisclient.debugMode = false;
@@ -1749,13 +1750,14 @@ function testLargeGetSet() {
     if (verbose && wasDebugMode)
       sys.debug("** debug output disabled for this test");
 
-    client.set('largetestfile', fileContents, function (err, value) {
+    client.set('largetestfile', fileContents.slice(0, size), function (err, value) {
         if (err) assert.fail(err, "testGET (large; 1)");
         assert.equal(value, true, "testGET (large; 2)");
 
         client.get('largetestfile', function (err, value) {
             if (err) assert.fail(err, "testGET (large; 3)");
-            checkEqual(value.binarySlice(0, value.length), fileContents, "testGET (large; 4)");
+
+            checkEqual(value.binarySlice(0, value.length), fileContents.slice(0, size), "testGET (large; 4)");
             redisclient.debugMode = wasDebugMode;
             testStoreAnImage();
         });
